@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset=utf-8 />
+  <title>Ottawa Dog Parks</title>
+  <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.2/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.0.2/dist/leaflet-src.js"></script>
+
+  <!-- Esri Leaflet -->
+  <script src="https://unpkg.com/esri-leaflet@2.0.7"></script>
+
+  <style>
+    body {margin:0; padding:0; height:100%; width:100%;}
+    #map {position: absolute; top:0; bottom:0; right:0; left:0; }
+    .btn {width: 100%; height: 25%; float: right; margin-right: 1px; opacity: 1; border-style: solid; border-radius: 7px; display:block; font-weight: bold; border:3px solid #000000;}
+    .Info {margin: 0; padding: 5px; border-style: solid; border-radius: 7px; border:3px solid #000000; background-color: #F9F9F9; font-weight: bold;}
+  </style>
+</head>
+
+<body>
+
+  <script src="https://unpkg.com/esri-leaflet-vector"></script>
+  <script src="https://unpkg.com/esri-leaflet-renderers@2.0.2"></script>
+  <div id="map"></div>
+  <script>
+    // VARIABLES - to be used throughout the script
+    var colours = ['#000000', '#55FF00','#D3FFBE','#FFFF73','#FF0000'];
+    var labels = ['LEGEND', 'DOGS ALLOWED', 'LEASH', 'MIXED', 'NO DOGS'];
+    var label_colour = ['#FFFFFF', '#000000', '#000000', '#000000', '#000000'];
+
+    // MAP CONTAINER + BASEMAP
+    var map = L.map('map', {
+      center: [45.416667, -75.683333],
+      zoom: 13,
+      zoomControl: false,
+      worldCopyJump: true
+
+    });
+    L.esri.Vector.basemap('DarkGray').addTo(map);
+
+    // TITLE
+    var InfoBox = L.control({position: 'topleft'});
+    InfoBox.onAdd = function(map){
+      var div = L.DomUtil.create('div', 'info legend');
+            div.innerHTML = '<p class="Info">A Leaflet Map of Ottawa\'s Dog Parks<br>- Click the legend items to FILTER<br>- Scroll to ZOOM<br>- Click on features to get more details</p>'
+            return div;
+          };
+    InfoBox.addTo(map);
+
+    // OTTAWA PARKS - createPane is so it's the top layer.
+    map.createPane('TheTop');
+    var parks = L.esri.featureLayer({
+      url: "https://services7.arcgis.com/1aGVm3EE0wqsincd/ArcGIS/rest/services/Ottawa_Parks/FeatureServer/0",
+      pane: 'TheTop',
+      where: "1=1"
+    }).addTo(map);
+    parks.bindPopup(function (evt) {
+      return L.Util.template('<p><center><b>{NAME}</b></center><br><b>DOG RULES: </b>{DOG_DESIGN}<br><b>ADDRESS:</b> {ADDRESS}<br> <b>DETAILS: </b> {DETAILS}</p>', evt.feature.properties);
+    });
+
+    // Highlight on hover and remove highlight after panning away
+    var OldId;
+    parks.on('mouseover', function(x){
+      OldId = x.layer.feature.id;
+      parks.setFeatureStyle(OldId, {
+        color: '#42f4ee',
+        weight: 3,
+        opacity: 1
+      });
+    });
+    parks.on('mouseout', function(x){
+      parks.resetFeatureStyle(OldId);
+    });
+
+    // PARKS FILTER
+    function UpdateWhere(item) {
+      index = labels.indexOf(item);
+      where_list = []; //Figure out how to do OR statement in 'where:' and then make a list that can be added to or taken from depending on which buttons are clicked currently.
+
+      if (item !== "LEGEND") {
+        buttonClicked  = document.getElementById(item);
+        if (parks.getWhere().indexOf(item) === -1) {
+          parks.setWhere("DOG_DESIGN =" + "'" + item + "'");
+          buttonClicked.style.color = colours[index];
+          buttonClicked.style.background = "#000000";
+          buttonClicked.style.borderColor = colours[index];
+
+        }
+        else {
+          parks.setWhere("1=1")
+          buttonClicked.style.color = "#000000";
+          buttonClicked.style.background = colours[index];
+          buttonClicked.style.borderColor = "#000000";
+        }
+      }
+    };
+
+    // OTTAWA BOUNDARY 
+    var boundary = L.esri.featureLayer({
+      url: "https://services7.arcgis.com/1aGVm3EE0wqsincd/ArcGIS/rest/services/Ottawa_Boundary/FeatureServer/0"
+    }).addTo(map);
+
+    // LEGEND
+    var legend = L.control({position: 'topright'});
+    legend.onAdd = function(map){
+      var div = L.DomUtil.create('div', 'info legend');
+        for (var i = 0; i < colours.length; i++) {
+            div.innerHTML += 
+            '<button id="'+ labels[i] +'"; class="btn"' + '; style="background-color:' + colours[i] + '; color:' + label_colour[i] + '"; onclick="UpdateWhere(' + "'" + labels[i] + "'" +');">' + '<span>' + labels[i] + '</span></button><br>'
+        }
+        return div;
+    };
+    legend.addTo(map);
+
+  </script>
+
+</body>
+</html>
