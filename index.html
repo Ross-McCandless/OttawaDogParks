@@ -43,7 +43,7 @@
     var InfoBox = L.control({position: 'topleft'});
     InfoBox.onAdd = function(map){
       var div = L.DomUtil.create('div', 'info legend');
-            div.innerHTML = '<p class="Info">A Leaflet Map of Ottawa\'s Dog Parks<br>- Click the legend items to FILTER<br>- Scroll to ZOOM<br>- Click on features to get more details</p>'
+            div.innerHTML = '<p class="Info"><b><big>A Leaflet Map of Ottawa\'s Dog Parks</big><b><br><br>- Click the legend items to ISOLATE<br>- Scroll to ZOOM<br>- Click on features to get more details<br><br> Made by <a href="https://www.linkedin.com/in/rossmccandless/">Ross McCandless</a></p>'
             return div;
           };
     InfoBox.addTo(map);
